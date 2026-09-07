@@ -49,18 +49,35 @@ function corsHeaders() {
   };
 }
 
+function describeError(err) {
+  const parts = [String((err && err.message) || err)];
+  let cause = err && err.cause;
+  let depth = 0;
+  while (cause && depth < 4) {
+    parts.push(String(cause.message || cause.code || cause));
+    cause = cause.cause;
+    depth++;
+  }
+  return parts.join(' <- ');
+}
+
 async function getToken() {
   if (cachedToken && Date.now() < cachedExpiry) return cachedToken;
 
-  const res = await fetch(TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: process.env.OPENSKY_CLIENT_ID || '',
-      client_secret: process.env.OPENSKY_CLIENT_SECRET || '',
-    }),
-  });
+  let res;
+  try {
+    res = await fetch(TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: process.env.OPENSKY_CLIENT_ID || '',
+        client_secret: process.env.OPENSKY_CLIENT_SECRET || '',
+      }),
+    });
+  } catch (err) {
+    throw new Error(`token request network failure: ${describeError(err)}`);
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
@@ -144,7 +161,7 @@ const server = http.createServer(async (req, res) => {
     res.end(JSON.stringify({ error: 'not found — use /states or /history' }));
   } catch (err) {
     res.writeHead(502, corsHeaders());
-    res.end(JSON.stringify({ error: String((err && err.message) || err) }));
+    res.end(JSON.stringify({ error: describeError(err) }));
   }
 });
 
