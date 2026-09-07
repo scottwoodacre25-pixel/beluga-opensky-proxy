@@ -1,0 +1,14 @@
+{
+  "name": "beluga-opensky-proxy",
+  "version": "1.0.0",
+  "description": "OpenSky OAuth2 proxy for the Beluga Fleet Tracker, deployed on Railway.",
+  "main": "server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {}
+}
